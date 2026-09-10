@@ -1,0 +1,206 @@
+{
+  "version": "2.0",
+  "format": "single-elimination-multimap",
+  "date": "2026-09-10T17:17:10.939232",
+  "config": {
+    "maps": [
+      {
+        "path": "maps/8x8/basesWorkers8x8.xml",
+        "label": "8x8",
+        "max_cycles": 1500
+      },
+      {
+        "path": "maps/16x16/basesWorkers16x16.xml",
+        "label": "16x16",
+        "max_cycles": 3000
+      },
+      {
+        "path": "maps/basesWorkers32x32A.xml",
+        "label": "32x32",
+        "max_cycles": 5000
+      },
+      {
+        "path": "maps/GardenOfWar64x64.xml",
+        "label": "64x64",
+        "max_cycles": 8000
+      }
+    ],
+    "games_per_matchup": 1
+  },
+  "anchors": {
+    "ai.RandomBiasedAI": {
+      "name": "RandomBiasedAI",
+      "weight": 10,
+      "tier": "easy"
+    },
+    "ai.abstraction.HeavyRush": {
+      "name": "HeavyRush",
+      "weight": 20,
+      "tier": "medium-hard"
+    },
+    "ai.abstraction.LightRush": {
+      "name": "LightRush",
+      "weight": 15,
+      "tier": "medium"
+    },
+    "ai.abstraction.WorkerRush": {
+      "name": "WorkerRush",
+      "weight": 15,
+      "tier": "medium"
+    },
+    "ai.competition.tiamat.Tiamat": {
+      "name": "Tiamat",
+      "weight": 20,
+      "tier": "hard"
+    },
+    "ai.coac.CoacAI": {
+      "name": "CoacAI",
+      "weight": 20,
+      "tier": "hard"
+    }
+  },
+  "results": [
+    {
+      "team_name": "clockwork",
+      "display_name": "Clockwork",
+      "agent_class": "ai.abstraction.submissions.clockwork.ClockworkBot",
+      "model_provider": "none",
+      "model_name": "none",
+      "score": 19.0,
+      "grade": "F",
+      "opponents": {
+        "RandomBiasedAI": {
+          "wins": 2,
+          "draws": 2,
+          "losses": 0,
+          "weighted_points": 8.5,
+          "avg_game_score": 0.85
+        },
+        "HeavyRush": {
+          "wins": 1,
+          "draws": 0,
+          "losses": 1,
+          "weighted_points": 12.0,
+          "avg_game_score": 0.6
+        },
+        "LightRush": {
+          "wins": 1,
+          "draws": 0,
+          "losses": 0,
+          "weighted_points": 18.0,
+          "avg_game_score": 1.2
+        },
+        "WorkerRush": {
+          "wins": 0,
+          "draws": 0,
+          "losses": 1,
+          "weighted_points": 0.0,
+          "avg_game_score": 0.0
+        }
+      },
+      "map_scores": {
+        "8x8": {
+          "map": "maps/8x8/basesWorkers8x8.xml",
+          "max_cycles": 1500,
+          "score": 54.0,
+          "grade": "D",
+          "eliminated_at": "WorkerRush",
+          "opponents": {
+            "RandomBiasedAI": {
+              "wins": 1,
+              "draws": 0,
+              "losses": 0,
+              "avg_game_score": 1.2,
+              "weighted_points": 12.0
+            },
+            "HeavyRush": {
+              "wins": 1,
+              "draws": 0,
+              "losses": 0,
+              "avg_game_score": 1.2,
+              "weighted_points": 24.0
+            },
+            "LightRush": {
+              "wins": 1,
+              "draws": 0,
+              "losses": 0,
+              "avg_game_score": 1.2,
+              "weighted_points": 18.0
+            },
+            "WorkerRush": {
+              "wins": 0,
+              "draws": 0,
+              "losses": 1,
+              "avg_game_score": 0.0,
+              "weighted_points": 0.0
+            }
+          }
+        },
+        "16x16": {
+          "map": "maps/16x16/basesWorkers16x16.xml",
+          "max_cycles": 3000,
+          "score": 12.0,
+          "grade": "F",
+          "eliminated_at": "HeavyRush",
+          "opponents": {
+            "RandomBiasedAI": {
+              "wins": 1,
+              "draws": 0,
+              "losses": 0,
+              "avg_game_score": 1.2,
+              "weighted_points": 12.0
+            },
+            "HeavyRush": {
+              "wins": 0,
+              "draws": 0,
+              "losses": 1,
+              "avg_game_score": 0.0,
+              "weighted_points": 0.0
+            }
+          }
+        },
+        "32x32": {
+          "map": "maps/basesWorkers32x32A.xml",
+          "max_cycles": 5000,
+          "score": 5.0,
+          "grade": "F",
+          "eliminated_at": "RandomBiasedAI",
+          "opponents": {
+            "RandomBiasedAI": {
+              "wins": 0,
+              "draws": 1,
+              "losses": 0,
+              "avg_game_score": 0.5,
+              "weighted_points": 5.0
+            }
+          }
+        },
+        "64x64": {
+          "map": "maps/GardenOfWar64x64.xml",
+          "max_cycles": 8000,
+          "score": 5.0,
+          "grade": "F",
+          "eliminated_at": "RandomBiasedAI",
+          "opponents": {
+            "RandomBiasedAI": {
+              "wins": 0,
+              "draws": 1,
+              "losses": 0,
+              "avg_game_score": 0.5,
+              "weighted_points": 5.0
+            }
+          }
+        }
+      },
+      "date": "2026-09-10T17:17:10.939232",
+      "maps": [
+        "maps/8x8/basesWorkers8x8.xml",
+        "maps/16x16/basesWorkers16x16.xml",
+        "maps/basesWorkers32x32A.xml",
+        "maps/GardenOfWar64x64.xml"
+      ],
+      "games_per_matchup": 1
+    }
+  ],
+  "head_to_head": []
+}
