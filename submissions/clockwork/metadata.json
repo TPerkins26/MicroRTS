@@ -1,6 +1,6 @@
 {
-  "team_name": "clockwork-bot",
-  "display_name": "Clockwork Bot",
+  "team_name": "clockwork",
+  "display_name": "Clockwork",
   "agent_class": "ClockworkBot",
   "agent_file": "ClockworkBot.java",
   "model_provider": "none",

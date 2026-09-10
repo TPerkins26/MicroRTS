@@ -1,4 +1,4 @@
-package ai.abstraction.submissions.clockwork_bot;
+package ai.abstraction.submissions.clockwork;
 
 import ai.abstraction.AbstractionLayerAI;
 import ai.abstraction.pathfinding.AStarPathFinding;
