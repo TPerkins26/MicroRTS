@@ -549,7 +549,8 @@ python3 tournament/match_server.py --port 8080</code></pre>
                 { "class": "ai.mcts.submissions.penguin_bot.MCTSAgent", "name": "PenguinBot", "description": "NaiveMCTS bot with periodic Ollama strategy guidance to bias exploration and lookahead.", "requires_llm": true },
                 { "class": "ai.mcts.submissions.penguin_bot_no_threading.MCTSAgent", "name": "PenguinBot (no-thread)", "description": "NaiveMCTS bot with periodic Ollama strategy guidance to bias exploration and lookahead.", "requires_llm": true },
                 { "class": "ai.mcts.submissions.xiebot.XieBot", "name": "xiebot", "description": "LLM-directed strategy planner for 16x16/32x32 play with bounded economy, production, posture, and selective tactical MCTS.", "requires_llm": true },
-                { "class": "ai.abstraction.submissions.yebot.yebot", "name": "yebot", "description": "Macro-LLM + Hard-coded Micro", "requires_llm": true }
+                { "class": "ai.abstraction.submissions.yebot.yebot", "name": "yebot", "description": "Macro-LLM + Hard-coded Micro", "requires_llm": true },
+                { "class": "ai.abstraction.submissions.clockwork_v2.ClockworkBotV2", "name": "Clockwork V2", "description": "Deterministic anti-rush bot with early barracks and worker interception.", "requires_llm": false }
             ]
         };
 
