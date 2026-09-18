@@ -1,0 +1,9 @@
+{
+  "team_name": "clockwork-v3",
+  "display_name": "Clockwork V3",
+  "agent_class": "ClockworkBotV3",
+  "agent_file": "ClockworkBotV3.java",
+  "model_provider": "none",
+  "model_name": "none",
+  "description": "Deterministic worker-rush bot with continuous worker production and one home harvester. Uses Chase-style distance-triggered defense, momentum-based posture, dynamic defensive lines, focused enemy-worker interception, and weighted target selection."
+}
