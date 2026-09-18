@@ -1,0 +1,9 @@
+{
+  "team_name": "clockwork-v2",
+  "display_name": "Clockwork V2",
+  "agent_class": "ClockworkBotV2",
+  "agent_file": "ClockworkBotV2.java",
+  "model_provider": "none",
+  "model_name": "none",
+  "description": "Deterministic role-based bot with one persistent harvester, alternating forward defenders and attackers, early barracks and Light production, and limited three-tile base-defense pursuit."
+}

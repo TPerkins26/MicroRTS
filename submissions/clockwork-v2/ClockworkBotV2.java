@@ -1,4 +1,4 @@
-package ai.abstraction.submissions.clockwork;
+package ai.abstraction.submissions.clockwork_v2;
 
 import ai.abstraction.AbstractionLayerAI;
 import ai.abstraction.Build;
@@ -18,19 +18,18 @@ import rts.units.Unit;
 import rts.units.UnitType;
 import rts.units.UnitTypeTable;
 
-public class ClockworkBot extends AbstractionLayerAI {
+public class ClockworkBotV2 extends AbstractionLayerAI {
 
     private UnitTypeTable utt;
     private UnitType workerType;
     private UnitType baseType;
     private UnitType barracksType;
     private UnitType lightType;
-    private UnitType rangedType;
     private long harvesterId = -1;
     private int nextRoleIndex;
     private final Map<Long, Integer> workerRoles = new HashMap<>();
 
-    public ClockworkBot(UnitTypeTable a_utt) {
+    public ClockworkBotV2(UnitTypeTable a_utt) {
         super(new AStarPathFinding());
         reset(a_utt);
     }
@@ -49,51 +48,55 @@ public class ClockworkBot extends AbstractionLayerAI {
         baseType = utt.getUnitType("Base");
         barracksType = utt.getUnitType("Barracks");
         lightType = utt.getUnitType("Light");
-        rangedType = utt.getUnitType("Ranged");
     }
 
     @Override
     public AI clone() {
-        return new ClockworkBot(utt);
+        return new ClockworkBotV2(utt);
     }
 
     @Override
     public PlayerAction getAction(int player, GameState gs) {
         PhysicalGameState pgs = gs.getPhysicalGameState();
         Player owner = gs.getPlayer(player);
-        int combatCount = countCombat(pgs, player);
-        int workerCount = countType(pgs, player, workerType);
-        int enemyRanged = countType(pgs, 1 - player, rangedType);
-        int enemyHeavy = countType(pgs, 1 - player, utt.getUnitType("Heavy"));
-        UnitType preferredCombat = chooseCombatType(pgs, enemyRanged, enemyHeavy);
+        List<Unit> workers = unitsOfType(pgs, player, workerType);
+        int barracksCount = countType(pgs, player, barracksType);
+        int enemyWorkers = countType(pgs, 1 - player, workerType);
+        int ownCombat = countCombat(pgs, player);
 
         for (Unit unit : pgs.getUnits()) {
             if (unit.getPlayer() != player || gs.getActionAssignment(unit) != null) {
                 continue;
             }
             if (unit.getType() == baseType) {
-                if (owner.getResources() >= workerType.cost && workerCount < workerTarget(pgs)) {
+                int target = barracksCount == 0 ? 1 : workerTarget(pgs);
+                if (owner.getResources() >= workerType.cost && workers.size() < target) {
                     train(unit, workerType);
                 }
-            } else if (unit.getType() == barracksType && owner.getResources() >= preferredCombat.cost) {
-                train(unit, preferredCombat);
+            } else if (unit.getType() == barracksType
+                    && owner.getResources() >= lightType.cost) {
+                train(unit, lightType);
             }
         }
 
-        List<Unit> workers = new LinkedList<>();
-        for (Unit unit : pgs.getUnits()) {
-            if (unit.getPlayer() == player && unit.getType() == workerType) {
-                workers.add(unit);
-            }
-        }
-
-        Unit harvester = chooseHarvester(workers);
-        Unit base = nearestOwnedStockpile(harvester, pgs, player);
+        workers = unitsOfType(pgs, player, workerType);
+        Unit harvester = chooseHarvester(workers, gs, player);
+        Unit base = nearestOwnedStockpile(workers.isEmpty() ? null : workers.get(0), pgs, player);
         Unit baseThreat = closestThreatToBase(base, pgs, player, defenseRadius(pgs));
         assignHarvest(harvester, pgs, player);
-        int barracksCount = countType(pgs, player, barracksType);
-        int reservedResources = 0;
         List<Integer> reserved = new ArrayList<>();
+        boolean buildingBarracks = false;
+        for (Unit worker : workers) {
+            if (worker != harvester && barracksCount == 0
+                && owner.getResources() >= barracksType.cost
+                    && !buildingBarracks) {
+                buildIfNotAlreadyBuilding(worker, barracksType, worker.getX(), worker.getY(),
+                        reserved, owner, pgs);
+                buildingBarracks = true;
+                barracksCount++;
+            }
+        }
+
         for (Unit worker : workers) {
             if (worker == harvester) {
                 continue;
@@ -101,7 +104,7 @@ public class ClockworkBot extends AbstractionLayerAI {
             if (getAbstractAction(worker) instanceof Build) {
                 continue;
             }
-            int roleIndex = roleIndex(worker, workers, harvester);
+            int roleIndex = roleIndex(worker, workers);
             if (roleIndex % 2 == 0) {
                 if (baseThreat != null) {
                     attack(worker, baseThreat);
@@ -112,6 +115,8 @@ public class ClockworkBot extends AbstractionLayerAI {
                 Unit target = bestTarget(worker, pgs, player);
                 if (target != null) {
                     attack(worker, target);
+                } else {
+                    idle(worker);
                 }
             }
         }
@@ -122,19 +127,6 @@ public class ClockworkBot extends AbstractionLayerAI {
                 Unit target = baseThreat != null ? baseThreat : bestTarget(unit, pgs, player);
                 if (target != null) {
                     attack(unit, target);
-                } else {
-                    idle(unit);
-                }
-            }
-        }
-
-        if (combatCount == 0) {
-            for (Unit worker : workers) {
-                if (getAbstractAction(worker) == null) {
-                    Unit target = bestTarget(worker, pgs, player);
-                    if (target != null) {
-                        attack(worker, target);
-                    }
                 }
             }
         }
@@ -142,7 +134,9 @@ public class ClockworkBot extends AbstractionLayerAI {
     }
 
     private void assignHarvest(Unit harvester, PhysicalGameState pgs, int player) {
-        if (harvester == null) return;
+        if (harvester == null) {
+            return;
+        }
         Unit resource = nearestResource(harvester, pgs);
         Unit base = nearestOwnedStockpile(harvester, pgs, player);
         if (resource != null && base != null) {
@@ -172,103 +166,41 @@ public class ClockworkBot extends AbstractionLayerAI {
         move(worker, x, y);
     }
 
-    private int workerTarget(PhysicalGameState pgs) {
-        int area = pgs.getWidth() * pgs.getHeight();
-        return area <= 64 ? 3 : area <= 256 ? 5 : 7;
-    }
-    private UnitType chooseCombatType(PhysicalGameState pgs, int enemyRanged, int enemyHeavy) {
-        if (enemyRanged > 0) {
-            return lightType;
+    private Unit chooseHarvester(List<Unit> workers, GameState gs, int player) {
+        if (workers.isEmpty()) {
+            return null;
         }
-        if (enemyHeavy > 0 || pgs.getWidth() * pgs.getHeight() >= 256) {
-            return rangedType;
-        }
-        return lightType;
-    }
-
-    private int countCombat(PhysicalGameState pgs, int player) {
-        int count = 0;
-        for (Unit unit : pgs.getUnits()) {
-            if (unit.getPlayer() == player && unit.getType().canAttack && !unit.getType().canHarvest) {
-                count++;
+        for (Unit worker : workers) {
+            if (worker.getID() == harvesterId) {
+                return worker;
             }
         }
-        return count;
+        harvesterId = workers.get(0).getID();
+        return workers.get(0);
     }
 
-    private int countType(PhysicalGameState pgs, int player, UnitType type) {
-        int count = 0;
-        if (type == null) {
-            return count;
-        }
+    private boolean nearEnemy(Unit from, PhysicalGameState pgs, int player, int range) {
         for (Unit unit : pgs.getUnits()) {
-            if (unit.getPlayer() == player && unit.getType() == type) {
-                count++;
+            if (unit.getPlayer() >= 0 && unit.getPlayer() != player
+                    && distance(from, unit) <= range) {
+                return true;
             }
         }
-        return count;
-    }
-
-    private Unit nearestResource(Unit from, PhysicalGameState pgs) {
-        Unit nearest = null;
-        int distance = Integer.MAX_VALUE;
-        for (Unit unit : pgs.getUnits()) {
-            if (unit.getType().isResource) {
-                int current = distance(from, unit);
-                if (current < distance) {
-                    nearest = unit;
-                    distance = current;
-                }
-            }
-        }
-        return nearest;
-    }
-
-    private Unit nearestOwnedStockpile(Unit from, PhysicalGameState pgs, int player) {
-        if (from == null) return null;
-        Unit nearest = null;
-        int distance = Integer.MAX_VALUE;
-        for (Unit unit : pgs.getUnits()) {
-            if (unit.getPlayer() == player && unit.getType().isStockpile) {
-                int current = distance(from, unit);
-                if (current < distance) {
-                    nearest = unit;
-                    distance = current;
-                }
-            }
-        }
-        return nearest;
-    }
-
-    private Unit bestTarget(Unit from, PhysicalGameState pgs, int player) {
-        Unit best = null;
-        int bestPriority = Integer.MAX_VALUE;
-        int bestDistance = Integer.MAX_VALUE;
-        for (Unit unit : pgs.getUnits()) {
-            if (unit.getPlayer() < 0 || unit.getPlayer() == player) {
-                continue;
-            }
-            int priority = unit.getType().isStockpile ? 3 : unit.getType().canHarvest ? 2 : 1;
-            int currentDistance = distance(from, unit);
-            if (priority < bestPriority || (priority == bestPriority && currentDistance < bestDistance)) {
-                best = unit;
-                bestPriority = priority;
-                bestDistance = currentDistance;
-            }
-        }
-        return best;
+        return false;
     }
 
     private Unit closestThreatToBase(Unit base, PhysicalGameState pgs, int player, int radius) {
-        if (base == null) return null;
+        if (base == null) {
+            return null;
+        }
         Unit threat = null;
         int bestDistance = Integer.MAX_VALUE;
         for (Unit unit : pgs.getUnits()) {
             if (unit.getPlayer() >= 0 && unit.getPlayer() != player) {
-                int currentDistance = distance(base, unit);
-                if (currentDistance <= radius && currentDistance < bestDistance) {
+                int baseDistance = distance(base, unit);
+                if (baseDistance <= radius && baseDistance < bestDistance) {
                     threat = unit;
-                    bestDistance = currentDistance;
+                    bestDistance = baseDistance;
                 }
             }
         }
@@ -276,7 +208,9 @@ public class ClockworkBot extends AbstractionLayerAI {
     }
 
     private Unit nearestEnemyToBase(Unit base, PhysicalGameState pgs, int player) {
-        if (base == null) return null;
+        if (base == null) {
+            return null;
+        }
         Unit nearest = null;
         int bestDistance = Integer.MAX_VALUE;
         for (Unit unit : pgs.getUnits()) {
@@ -295,6 +229,96 @@ public class ClockworkBot extends AbstractionLayerAI {
         return 3;
     }
 
+    private int workerTarget(PhysicalGameState pgs) {
+        int area = pgs.getWidth() * pgs.getHeight();
+        return area <= 64 ? 4 : area <= 256 ? 6 : 8;
+    }
+
+    private List<Unit> unitsOfType(PhysicalGameState pgs, int player, UnitType type) {
+        List<Unit> result = new LinkedList<>();
+        for (Unit unit : pgs.getUnits()) {
+            if (unit.getPlayer() == player && unit.getType() == type) {
+                result.add(unit);
+            }
+        }
+        return result;
+    }
+
+    private int countCombat(PhysicalGameState pgs, int player) {
+        int count = 0;
+        for (Unit unit : pgs.getUnits()) {
+            if (unit.getPlayer() == player && unit.getType().canAttack
+                    && !unit.getType().canHarvest) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int countType(PhysicalGameState pgs, int player, UnitType type) {
+        int count = 0;
+        for (Unit unit : pgs.getUnits()) {
+            if (unit.getPlayer() == player && unit.getType() == type) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private Unit nearestResource(Unit from, PhysicalGameState pgs) {
+        if (from == null) {
+            return null;
+        }
+        Unit nearest = null;
+        int bestDistance = Integer.MAX_VALUE;
+        for (Unit unit : pgs.getUnits()) {
+            int currentDistance = distance(from, unit);
+            if (unit.getType().isResource && currentDistance < bestDistance) {
+                nearest = unit;
+                bestDistance = currentDistance;
+            }
+        }
+        return nearest;
+    }
+
+    private Unit nearestOwnedStockpile(Unit from, PhysicalGameState pgs, int player) {
+        if (from == null) {
+            return null;
+        }
+        Unit nearest = null;
+        int bestDistance = Integer.MAX_VALUE;
+        for (Unit unit : pgs.getUnits()) {
+            int currentDistance = distance(from, unit);
+            if (unit.getPlayer() == player && unit.getType().isStockpile
+                    && currentDistance < bestDistance) {
+                nearest = unit;
+                bestDistance = currentDistance;
+            }
+        }
+        return nearest;
+    }
+
+    private Unit bestTarget(Unit from, PhysicalGameState pgs, int player) {
+        Unit best = null;
+        int bestPriority = Integer.MAX_VALUE;
+        int bestDistance = Integer.MAX_VALUE;
+        for (Unit unit : pgs.getUnits()) {
+            if (unit.getPlayer() < 0 || unit.getPlayer() == player) {
+                continue;
+            }
+            int priority = unit.getType().canHarvest ? 1
+                    : unit.getType().isStockpile ? 3 : 2;
+            int currentDistance = distance(from, unit);
+            if (priority < bestPriority || (priority == bestPriority
+                    && currentDistance < bestDistance)) {
+                best = unit;
+                bestPriority = priority;
+                bestDistance = currentDistance;
+            }
+        }
+        return best;
+    }
+
     private int distance(Unit first, Unit second) {
         return Math.abs(first.getX() - second.getX()) + Math.abs(first.getY() - second.getY());
     }
@@ -302,14 +326,5 @@ public class ClockworkBot extends AbstractionLayerAI {
     @Override
     public List<ParameterSpecification> getParameters() {
         return new ArrayList<>();
-    }
-
-    private Unit chooseHarvester(List<Unit> workers) {
-        if (workers.isEmpty()) return null;
-        for (Unit worker : workers) {
-            if (worker.getID() == harvesterId) return worker;
-        }
-        harvesterId = workers.get(0).getID();
-        return workers.get(0);
     }
 }
